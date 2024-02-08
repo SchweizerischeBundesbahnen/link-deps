@@ -24,7 +24,7 @@ Example `package.json`:
     "prepare": "link-deps"
   },
   "devDependencies": {
-    "link-deps": "^1.0.0"
+    "@stefan-schubert-sbb/link-deps": "^1.0.0"
   }
 }
 ```
@@ -32,8 +32,6 @@ Example `package.json`:
 When the relative path can be found, the library at this path will be re-built and re-installed into this project, if the source files have been changed during `prepare`.
 
 The normal `my-cool-library` dependency will be defaulted to, for those that don't have a local checkout of `my-cool-library`, and to resolve transitive dependencies.
-
-An example setup, where examples project are linked to their hosting library, can be found [here](https://github.com/mobxjs/mst-gql/pull/40/commits/4d2c0858f8c44a562c0244466b56f79b0ed7591b).
 
 # Why
 
@@ -61,7 +59,7 @@ Since building a linked package every time `yarn install` is run is expensive, t
 ## Installation
 
 ```bash
-npx link-deps init
+npx @stefan-schubert-sbb/link-deps init
 ```
 
 Options:
@@ -76,7 +74,7 @@ Running this script will install `link-deps`, add script and initialize empty `l
 {
   "name": "my-project",
   "devDependencies": {
-    "link-deps": "^1.0.0"
+    "@stefan-schubert-sbb/link-deps": "^1.0.0"
   },
   "linkDependencies": {},
   "scripts": {
@@ -128,17 +126,10 @@ Alias `-D`. Installs relative dependency in `devDependencies` section.
     "prepare": "link-deps"
   },
   "devDependencies": {
-    "link-deps": "^1.0.0"
+    "@stefan-schubert-sbb/link-deps": "^1.0.0"
   }
 }
 ```
-
-## Run `npx link-deps` when devving!
-
-The relative dependency will automatically be checked for changes, based on the hooks you've set up during [installation](#installation).
-
-However, you can always trigger a manual check-and-build-if-needed by running `npx link-deps` (or just `yarn`). If you are working on a project that supports
-hot reloading, this will makes sure the changes in the relative dependency will automatically show up in your project!
 
 ## Watch mode
 

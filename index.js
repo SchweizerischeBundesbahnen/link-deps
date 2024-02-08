@@ -213,7 +213,7 @@ export function installLinkDepsPackage() {
     (pkg.dependencies && pkg.dependencies["link-deps"])
   )) {
     console.log('[link-deps] Installing link-deps package')
-    yarnOrNpm.spawn.sync(["add", "-D", "link-deps"])
+    yarnOrNpm.spawn.sync(["add", "-D", "@stefan-schubert-sbb/link-deps"])
   }
 }
 
