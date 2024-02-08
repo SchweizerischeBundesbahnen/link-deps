@@ -104,7 +104,7 @@ In general, this doesn't add to much overhead, since usually `link-deps` is able
 Running following script will initialize `link-deps` if not initialized yet, find the package at the provided path, install it as normal dependency and pack relative dependency.
 
 ```bash
-npx link-deps add ../../packages/my-cool-library
+npx @stefan-schubert-sbb/link-deps add ../../packages/my-cool-library
 ```
 
 Options:
