@@ -1,17 +1,20 @@
 {
-  "name": "relative-deps",
-  "version": "1.0.5",
+  "name": "@stefan-schubert-sbb/link-deps",
+  "version": "1.0.0",
   "description": "Installs local dependencies for optimal developer experience",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "bin": {
-    "relative-deps": "./cli.js"
+    "link-deps": "./cli.js"
+  },
+  "type": "module",
+  "exports": {
+    "default": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mweststrate/relative-deps.git"
+    "url": "git+https://github.com/stefan-schubert-sbb/link-deps.git"
   },
   "keywords": [
     "yarn",
@@ -20,16 +23,15 @@
     "relative",
     "dependencies"
   ],
-  "author": "Michel Weststrate",
+  "author": "Michel Weststrate, Stefan Schubert",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mweststrate/relative-deps/issues"
+    "url": "https://github.com/stefan-schubert-sbb/link-deps/issues"
   },
-  "homepage": "https://github.com/mweststrate/relative-deps#readme",
+  "homepage": "https://github.com/stefan-schubert-sbb/link-deps#readme",
   "dependencies": {
-    "checksum": "^1.0.0",
     "globby": "^14.0.0",
-    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "read-pkg-up": "^11.0.0",
     "rimraf": "^5.0.5",
     "tar": "^6.2.0",

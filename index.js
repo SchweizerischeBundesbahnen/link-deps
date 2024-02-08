@@ -1,49 +1,48 @@
-const path = require("path")
-const child_process = require("child_process")
-const fs = require("fs")
-const readPkgUp = require("read-pkg-up")
-const rimraf = require("rimraf")
-const globby = require("globby")
-const checksum = require("checksum")
-const merge = require("lodash/merge")
-const debounce = require("lodash/debounce")
-const { spawn } = require("yarn-or-npm")
-const tar = require("tar")
+import path from "node:path";
+import fs from "node:fs";
+import crypto from "node:crypto";
+import { readPackageUpSync } from "read-pkg-up";
+import { rimrafSync } from "rimraf";
+import { globby } from "globby";
+import merge from "lodash-es/merge.js";
+import debounce from "lodash-es/debounce.js";
+import yarnOrNpm from "yarn-or-npm";
+import tar from "tar";
 
-async function installRelativeDeps() {
-  const projectPkgJson = readPkgUp.sync()
+export async function installLinkDeps() {
+  const projectPkgJson = readPackageUpSync()
 
-  const relativeDependencies = projectPkgJson.package.relativeDependencies
+  const dependencies = projectPkgJson?.packageJson.linkDependencies
 
-  if (!relativeDependencies) {
-    console.warn("[relative-deps][WARN] No 'relativeDependencies' specified in package.json")
+  if (!dependencies) {
+    console.warn("[link-deps][WARN] No 'linkDependencies' specified in package.json")
     process.exit(0)
   }
 
-  const targetDir = path.dirname(projectPkgJson.path)
+  const targetDir = path.dirname(projectPkgJson?.path)
 
-  const depNames = Object.keys(relativeDependencies)
+  const depNames = Object.keys(dependencies)
   for (const name of depNames) {
-    const libDir = path.resolve(targetDir, relativeDependencies[name])
-    console.log(`[relative-deps] Checking '${name}' in '${libDir}'`)
+    const libDir = path.resolve(targetDir, dependencies[name])
+    console.log(`[link-deps] Checking '${name}' in '${libDir}'`)
 
     const regularDep =
-      (projectPkgJson.package.dependencies && projectPkgJson.package.dependencies[name]) ||
-      (projectPkgJson.package.devDependencies && projectPkgJson.package.devDependencies[name])
+      (projectPkgJson?.packageJson.dependencies && projectPkgJson?.packageJson.dependencies[name]) ||
+      (projectPkgJson?.packageJson.devDependencies && projectPkgJson?.packageJson.devDependencies[name])
 
     if (!regularDep) {
-      console.warn(`[relative-deps][WARN] The relative dependency '${name}' should also be added as normal- or dev-dependency`)
+      console.warn(`[link-deps][WARN] The relative dependency '${name}' should also be added as normal- or dev-dependency`)
     }
 
     // Check if target dir exists
     if (!fs.existsSync(libDir)) {
       // Nope, but is the dependency mentioned as normal dependency in the package.json? Use that one
       if (regularDep) {
-        console.warn(`[relative-deps][WARN] Could not find target directory '${libDir}', using normally installed version ('${regularDep}') instead`)
+        console.warn(`[link-deps][WARN] Could not find target directory '${libDir}', using normally installed version ('${regularDep}') instead`)
         return
       } else {
         console.error(
-          `[relative-deps][ERROR] Failed to resolve dependency ${name}: failed to find target directory '${libDir}', and the library is not present as normal depenency either`
+          `[link-deps][ERROR] Failed to resolve dependency ${name}: failed to find target directory '${libDir}', and the library is not present as normal depenency either`
         )
         process.exit(1)
       }
@@ -58,39 +57,38 @@ async function installRelativeDeps() {
       buildLibrary(name, libDir)
       packAndInstallLibrary(name, libDir, targetDir)
       fs.writeFileSync(hashStore.file, hashStore.hash)
-      console.log(`[relative-deps] Re-installing ${name}... DONE`)
+      console.log(`[link-deps] Re-installing ${name}... DONE`)
     }
   }
 }
 
-async function watchRelativeDeps() {
-  const projectPkgJson = readPkgUp.sync()
+export async function watchLinkDeps() {
+  const projectPkgJson = readPackageUpSync()
 
-  const relativeDependencies = projectPkgJson.package.relativeDependencies
+  const dependencies = projectPkgJson?.packageJson.linkDependencies
 
-  if (!relativeDependencies) {
-    console.warn("[relative-deps][WARN] No 'relativeDependencies' specified in package.json")
+  if (!dependencies) {
+    console.warn("[link-deps][WARN] No 'linkDependencies' specified in package.json")
     process.exit(0)
   }
 
-  Object.values(relativeDependencies).forEach(path => {
-    fs.watch(path, { recursive: true }, debounce(installRelativeDeps, 500))
+  Object.values(dependencies).forEach(path => {
+    fs.watch(path, { recursive: true }, debounce(installLinkDeps, 500))
   });
 }
 
 async function libraryHasChanged(name, libDir, targetDir, hashStore) {
-  const hashFile = path.join(targetDir, "node_modules", name, ".relative-deps-hash")
+  const hashFile = path.join(targetDir, "node_modules", name, ".link-deps-hash")
   const referenceContents = fs.existsSync(hashFile) ? fs.readFileSync(hashFile, "utf8") : ""
-  // compute the hahses
+  // compute the hashes
   const libFiles = await findFiles(libDir, targetDir)
-  const hashes = []
-  for (file of libFiles) hashes.push(await getFileHash(path.join(libDir, file)))
-  const contents = libFiles.map((file, index) => hashes[index] + " " + file).join("\n")
+    const hashes = await Promise.all(libFiles.map(file => getFileHash(path.join(libDir, file))));
+    const contents = libFiles.map((file, index) => hashes[index] + " " + file).join("\n")
   hashStore.file = hashFile
   hashStore.hash = contents
   if (contents === referenceContents) {
     // computed hashes still the same?
-    console.log("[relative-deps] No changes")
+    console.log("[link-deps] No changes")
     return false
   }
   // Print which files did change
@@ -99,7 +97,7 @@ async function libraryHasChanged(name, libDir, targetDir, hashStore) {
     const refLines = referenceContents.split("\n")
     for (let i = 0; i < contentsLines.length; i++)
       if (contentsLines[i] !== refLines[i]) {
-        console.log("[relative-deps] Changed file: " + libFiles[i]) //, contentsLines[i], refLines[i])
+        console.log("[link-deps] Changed file: " + libFiles[i]) //, contentsLines[i], refLines[i])
         break
       }
   }
@@ -124,19 +122,19 @@ async function findFiles(libDir, targetDir) {
 function buildLibrary(name, dir) {
   // Run install if never done before
   if (!fs.existsSync(path.join(dir, "node_modules"))) {
-    console.log(`[relative-deps] Running 'install' in ${dir}`)
-    spawn.sync(["install"], { cwd: dir, stdio: [0, 1, 2] })
+    console.log(`[link-deps] Running 'install' in ${dir}`)
+    yarnOrNpm.spawn.sync(["install"], { cwd: dir, stdio: [0, 1, 2] })
   }
 
   // Run build script if present
   const libraryPkgJson = JSON.parse(fs.readFileSync(path.join(dir, "package.json"), "utf8"))
   if (!libraryPkgJson.name === name) {
-    console.error(`[relative-deps][ERROR] Mismatch in package name: found '${libraryPkgJson.name}', expected '${name}'`)
+    console.error(`[link-deps][ERROR] Mismatch in package name: found '${libraryPkgJson.name}', expected '${name}'`)
     process.exit(1)
   }
   if (libraryPkgJson.scripts && libraryPkgJson.scripts.build) {
-    console.log(`[relative-deps] Building ${name} in ${dir}`)
-    spawn.sync(["run", "build"], { cwd: dir, stdio: [0, 1, 2] })
+    console.log(`[link-deps] Building ${name} in ${dir}`)
+    yarnOrNpm.spawn.sync(["run", "build"], { cwd: dir, stdio: [0, 1, 2] })
   }
 }
 
@@ -144,12 +142,12 @@ function packAndInstallLibrary(name, dir, targetDir) {
   const libDestDir = path.join(targetDir, "node_modules", name)
   let fullPackageName
   try {
-    console.log("[relative-deps] Copying to local node_modules")
-    spawn.sync(["pack"], { cwd: dir, stdio: [0, 1, 2] })
+    console.log("[link-deps] Copying to local node_modules")
+    yarnOrNpm.spawn.sync(["pack"], { cwd: dir, stdio: [0, 1, 2] })
 
     if (fs.existsSync(libDestDir)) {
       // TODO: should we really remove it? Just overwritting could be fine
-      rimraf.sync(libDestDir)
+      rimrafSync(libDestDir)
     }
     fs.mkdirSync(libDestDir, { recursive: true })
 
@@ -160,7 +158,7 @@ function packAndInstallLibrary(name, dir, targetDir) {
     const packagedName = fs.readdirSync(dir).find(file => regex.test(file))
     fullPackageName = path.join(dir, packagedName)
 
-    console.log(`[relative-deps] Extracting "${fullPackageName}" to ${libDestDir}`)
+    console.log(`[link-deps] Extracting "${fullPackageName}" to ${libDestDir}`)
 
     const [cwd, file] = [libDestDir, fullPackageName].map(absolutePath => 
       path.relative(process.cwd(), absolutePath)
@@ -181,12 +179,11 @@ function packAndInstallLibrary(name, dir, targetDir) {
 }
 
 async function getFileHash(file) {
-  return await new Promise((resolve, reject) => {
-    checksum.file(file, (error, hash) => {
-      if (error) reject(error)
-      else resolve(hash)
-    })
-  })
+  const fileContent = fs.readFileSync(file, { encoding: 'utf-8' });
+  return crypto
+    .createHash('sha1')
+    .update(fileContent, 'utf8')
+    .digest('hex');
 }
 
 function addScriptToPackage(script) {
@@ -195,60 +192,60 @@ function addScriptToPackage(script) {
     pkg.scripts = {}
   }
 
-  const msg = `[relative-deps] Adding relative-deps to ${script} script in package.json`
+  const msg = `[link-deps] Adding link-deps to ${script} script in package.json`
 
   if (!pkg.scripts[script]) {
     console.log(msg)
-    pkg.scripts[script] = "relative-deps"
+    pkg.scripts[script] = "link-deps"
 
-  } else if (!pkg.scripts[script].includes("relative-deps")) {
+  } else if (!pkg.scripts[script].includes("link-deps")) {
     console.log(msg)
-    pkg.scripts[script] = `${pkg.scripts[script]} && relative-deps`
+    pkg.scripts[script] = `${pkg.scripts[script]} && link-deps`
   }
   setPackageData(pkg)
 }
 
-function installRelativeDepsPackage() {
+export function installLinkDepsPackage() {
   let pkg = getPackageJson()
 
   if (!(
-    (pkg.devDependencies && pkg.devDependencies["relative-deps"]) ||
-    (pkg.dependencies && pkg.dependencies["relative-deps"])
+    (pkg.devDependencies && pkg.devDependencies["link-deps"]) ||
+    (pkg.dependencies && pkg.dependencies["link-deps"])
   )) {
-    console.log('[relative-deps] Installing relative-deps package')
-    spawn.sync(["add", "-D", "relative-deps"])
+    console.log('[link-deps] Installing link-deps package')
+    yarnOrNpm.spawn.sync(["add", "-D", "link-deps"])
   }
 }
 
-function setupEmptyRelativeDeps() {
+function setupEmptyLinkDeps() {
   let pkg = getPackageJson()
 
-  if (!pkg.relativeDependencies) {
-    console.log(`[relative-deps] Setting up relativeDependencies section in package.json`)
-    pkg.relativeDependencies = {}
+  if (!pkg.linkDependencies) {
+    console.log(`[link-deps] Setting up linkDependencies section in package.json`)
+    pkg.linkDependencies = {}
     setPackageData(pkg)
   }
 }
 
-function initRelativeDeps({ script }) {
-  installRelativeDepsPackage()
-  setupEmptyRelativeDeps()
+export function initLinkDeps({ script }) {
+  installLinkDepsPackage()
+  setupEmptyLinkDeps()
   addScriptToPackage(script)
 }
 
-async function addRelativeDeps({ paths, dev, script }) {
-  initRelativeDeps({ script })
+export async function addLinkDeps({ paths, dev, script }) {
+  initLinkDeps({ script })
 
   if (!paths || paths.length === 0) {
-    console.log(`[relative-deps][WARN] no paths provided running ${script}`)
-    spawn.sync([script])
+    console.log(`[link-deps][WARN] no paths provided running ${script}`)
+    yarnOrNpm.spawn.sync([script])
     return
   }
   const libraries = paths.map(relPath => {
     const libPackagePath = path.resolve(process.cwd(), relPath, "package.json")
     if (!fs.existsSync(libPackagePath)) {
       console.error(
-        `[relative-deps][ERROR] Failed to resolve dependency ${relPath}`
+        `[link-deps][ERROR] Failed to resolve dependency ${relPath}`
       )
       process.exit(1)
     }
@@ -270,21 +267,21 @@ async function addRelativeDeps({ paths, dev, script }) {
   libraries.forEach(library => {
     if (!pkg[depsKey][library.name]) {
       try {
-        spawn.sync(["add", ...[dev ? ["-D"] : []], library.name], { stdio: "ignore" })
+        yarnOrNpm.spawn.sync(["add", ...[dev ? ["-D"] : []], library.name], { stdio: "ignore" })
       } catch (_e) {
-        console.log(`[relative-deps][WARN] Unable to fetch ${library.name} from registry. Installing as a relative dependency only.`)
+        console.log(`[link-deps][WARN] Unable to fetch ${library.name} from registry. Installing as a relative dependency only.`)
       }
     }
   })
 
-  if (!pkg.relativeDependencies) pkg.relativeDependencies = {}
+  if (!pkg.linkDependencies) pkg.linkDependencies = {}
 
   libraries.forEach(dependency => {
-    pkg.relativeDependencies[dependency.name] = dependency.relPath
+    pkg.linkDependencies[dependency.name] = dependency.relPath
   })
 
   setPackageData(pkg)
-  await installRelativeDeps()
+  await installLinkDeps()
 }
 
 function setPackageData(pkgData) {
@@ -298,8 +295,3 @@ function setPackageData(pkgData) {
 function getPackageJson() {
   return JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), "utf-8"))
 }
-
-module.exports.watchRelativeDeps = watchRelativeDeps
-module.exports.installRelativeDeps = installRelativeDeps
-module.exports.initRelativeDeps = initRelativeDeps
-module.exports.addRelativeDeps = addRelativeDeps

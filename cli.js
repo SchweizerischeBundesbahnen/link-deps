@@ -1,28 +1,28 @@
 #!/usr/bin/env node
-const yargs = require("yargs");
-const relativeDeps = require("./index");
+import yargs from "yargs/yargs";
+import { initLinkDeps, installLinkDeps, watchLinkDeps, addLinkDeps } from "./index.js";
 
-yargs
+yargs(process.argv.slice(2))
   .usage("Usage: $0 <command> [options]")
   .command({
     command: "*",
-    describe: "Install relative deps",
-    handler: relativeDeps.installRelativeDeps
+    describe: "Install linked deps",
+    handler: installLinkDeps
   })
   .command({
     command: "watch",
-    describe: "Watch relative deps and install on change",
-    handler: relativeDeps.watchRelativeDeps
+    describe: "Watch linked deps and install on change",
+    handler: watchLinkDeps
   })
   .command({
     command: "init",
-    describe: "Initialize relative-deps",
-    handler: relativeDeps.initRelativeDeps
+    describe: "Initialize link-deps",
+    handler: initLinkDeps
   })
   .command({
     command: "add [paths...]",
-    describe: "Add path as relative dependencies",
-    handler: relativeDeps.addRelativeDeps
+    describe: "Add path as linked dependencies",
+    handler: addLinkDeps
   })
   .option("D", {
     alias: ["dev", "save-dev"],
@@ -32,7 +32,7 @@ yargs
   })
   .option("S", {
     alias: ["script"],
-    description: "Script for relative-deps",
+    description: "Script for link-deps",
     default: "prepare",
     type: "string"
   }).argv;
