@@ -24,7 +24,7 @@ Example `package.json`:
     "prepare": "link-deps"
   },
   "devDependencies": {
-    "@stefan-schubert-sbb/link-deps": "^1.0.0"
+    "@sbb-utils/link-deps": "^1.0.0"
   }
 }
 ```
@@ -59,7 +59,7 @@ Since building a linked package every time `yarn install` is run is expensive, t
 ## Installation
 
 ```bash
-npx @stefan-schubert-sbb/link-deps init
+npx @sbb-utils/link-deps init
 ```
 
 Options:
@@ -74,7 +74,7 @@ Running this script will install `link-deps`, add script and initialize empty `l
 {
   "name": "my-project",
   "devDependencies": {
-    "@stefan-schubert-sbb/link-deps": "^1.0.0"
+    "@sbb-utils/link-deps": "^1.0.0"
   },
   "linkDependencies": {},
   "scripts": {
@@ -104,7 +104,7 @@ In general, this doesn't add to much overhead, since usually `link-deps` is able
 Running following script will initialize `link-deps` if not initialized yet, find the package at the provided path, install it as normal dependency and pack relative dependency.
 
 ```bash
-npx @stefan-schubert-sbb/link-deps add ../../packages/my-cool-library
+npx @sbb-utils/link-deps add ../../packages/my-cool-library
 ```
 
 Options:
@@ -126,7 +126,7 @@ Alias `-D`. Installs relative dependency in `devDependencies` section.
     "prepare": "link-deps"
   },
   "devDependencies": {
-    "@stefan-schubert-sbb/link-deps": "^1.0.0"
+    "@sbb-utils/link-deps": "^1.0.0"
   }
 }
 ```
