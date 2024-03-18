@@ -5,6 +5,7 @@
   "bin": {
     "link-deps": "./cli.js"
   },
+  "files": ["*.js", "LICENSE", "README.md"],
   "type": "module",
   "exports": {
     "default": "./index.js"
