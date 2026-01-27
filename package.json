@@ -1,6 +1,6 @@
 {
   "name": "@sbb-utils/link-deps",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Installs local dependencies for optimal developer experience",
   "bin": {
     "link-deps": "./cli.js"
