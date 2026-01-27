@@ -7,7 +7,7 @@ import { globby } from "globby";
 import merge from "lodash-es/merge.js";
 import debounce from "lodash-es/debounce.js";
 import yarnOrNpm from "yarn-or-npm";
-import tar from "tar";
+import { extract } from "tar";
 
 export async function installLinkDeps() {
   const projectPkgJson = readPackageUpSync()
@@ -164,7 +164,7 @@ function packAndInstallLibrary(name, dir, targetDir) {
       path.relative(process.cwd(), absolutePath)
     )
 
-    tar.extract({
+    extract({
       cwd,
       file,
       gzip: true, 
@@ -213,7 +213,7 @@ export function installLinkDepsPackage() {
     (pkg.dependencies && pkg.dependencies["link-deps"])
   )) {
     console.log('[link-deps] Installing link-deps package')
-    yarnOrNpm.spawn.sync(["add", "-D", "@sbb-utils/link-deps"])
+    yarnOrNpm.spawn.sync(["add", "-D", "@stefan-schubert-sbb/link-deps"])
   }
 }
 

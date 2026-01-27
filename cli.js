@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-import yargs from "yargs/yargs";
+import yargs from "yargs";
+import {hideBin} from "yargs/helpers";
 import { initLinkDeps, installLinkDeps, watchLinkDeps, addLinkDeps } from "./index.js";
 
-yargs(process.argv.slice(2))
+yargs()
   .usage("Usage: $0 <command> [options]")
   .command({
     command: "*",
@@ -35,4 +36,6 @@ yargs(process.argv.slice(2))
     description: "Script for link-deps",
     default: "prepare",
     type: "string"
-  }).argv;
+  })
+  .help()
+  .parse(hideBin(process.argv));
